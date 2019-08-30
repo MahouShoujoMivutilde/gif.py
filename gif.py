@@ -1,4 +1,7 @@
-from os import path, getenv, remove
+#!/usr/bin/python3
+
+from os import path, remove
+from tempfile import gettempdir
 from random import random
 import subprocess
 import argparse
@@ -7,18 +10,18 @@ import re
 DESC = """
 Скрипт для создания gif из видео с помощью ffmpeg.
 
-Использует генерацию палитры в режиме stats_mode=full, 
+Использует генерацию палитры в режиме stats_mode=full,
 с дизерингом sierra2_4a.
 
 Умеет менять высоту и частоту кадров выходному файлу.
 
 Примеры:
-    gif.py input.mkv output.gif - перекодирует в gif, 
+    gif.py input.mkv output.gif - перекодирует в gif,
     частоту кадров поставит не больше 30
 
     gif.py input.mkv -r 15 output.gif - поставит fps уже на 15
 
-    gif.py input.mkv -r 15 -v 300 output.gif - fps на 15 и высота на 300px  
+    gif.py input.mkv -r 15 -v 300 output.gif - fps на 15 и высота на 300px
 """
 EPI = """
 Источники вдохновения
@@ -27,7 +30,7 @@ EPI = """
 """
 def get_args():
     parser = argparse.ArgumentParser(
-        description = DESC, 
+        description = DESC,
         formatter_class = lambda prog: argparse.RawTextHelpFormatter(prog, max_help_position = 40),
         epilog = EPI
     )
@@ -46,7 +49,7 @@ def get_fps(fp):
     out, err = p.communicate()
     return float(
         re.search(
-            '(\d+(\.\d+)?) fps', 
+            '(\d+(\.\d+)?) fps',
             err.decode('utf-8')
         ).group()[:-4]
     )
@@ -56,21 +59,21 @@ def _get_scale_str(height):
 
 def gen_pal(fp, fpal, fps, height):
     p = subprocess.Popen([
-        'ffmpeg', 
-        '-v', 'warning', 
-        '-i', fp, 
+        'ffmpeg',
+        '-v', 'warning',
+        '-i', fp,
         '-vf', 'fps={},{}palettegen=stats_mode=full'.format(
             fps,
             _get_scale_str(height)
-        ), 
+        ),
         '-y', fpal
     ])
     p.communicate()
 
 def encode(fp, out, pal, fps, height):
     p = subprocess.Popen([
-        'ffmpeg', 
-        '-v', 'warning', 
+        'ffmpeg',
+        '-v', 'warning',
         '-i', fp,
         '-i', pal,
         '-lavfi', 'fps={},{}paletteuse=dither=sierra2_4a:diff_mode=rectangle'.format(
@@ -85,7 +88,7 @@ if __name__ == "__main__":
 
     args = get_args()
 
-    temp_pal = path.join(getenv("TEMP"), str(random()) + '.png')
+    temp_pal = path.join(gettempdir(), str(random()) + '.png')
 
     if args.fps is None:
         args.fps = get_fps(args.infile)
